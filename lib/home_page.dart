@@ -3,6 +3,8 @@ import 'mission_page.dart';
 import 'user_page.dart';
 import 'camera_page.dart';
 import 'coins_page.dart';
+import 'timer_page.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -98,13 +100,18 @@ class HomeContent extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const CameraPage()),
           );
         }
+        if (label == "Timer") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TimerPage()),
+          );
+        }
         if (label == "Coins") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CoinsPage()),
           );
         }
-        // TODO: 其他頁面（Timer, Coins）也可以在這邊加
       },
       child: Column(
         children: [

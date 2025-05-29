@@ -5,17 +5,17 @@ import 'history_page.dart';
 
 class TimerPage extends StatefulWidget {
   const TimerPage({super.key});
-
   @override
   _TimerPageState createState() => _TimerPageState();
 }
 
 class _TimerPageState extends State<TimerPage> {
-  int _initialTime = 1 * 60; // 初始時間（秒）
+  int _initialTime = 1 * 60; // 初始倒數時間（秒）
   int _remainingTime = 1 * 60;
   Timer? _timer;
   bool _isRunning = false;
 
+  /// 開始計時器
   void _startTimer() {
     setState(() => _isRunning = true);
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -28,15 +28,17 @@ class _TimerPageState extends State<TimerPage> {
     });
   }
 
+  /// 暫停計時器
   void _pauseTimer() {
     _timer?.cancel();
     setState(() => _isRunning = false);
   }
 
-  void _resetTimer() {
+  /// 重設計時器（不跳轉頁面）
+  void _resetTimer({bool exitAfterReset = false}) {
     _timer?.cancel();
 
-    if (_remainingTime != _initialTime) {
+    if (exitAfterReset && _remainingTime != _initialTime) {
       final now = DateTime.now();
       final startTime = now.subtract(Duration(seconds: _initialTime - _remainingTime));
       final record = HistoryRecord(
@@ -45,9 +47,9 @@ class _TimerPageState extends State<TimerPage> {
         start: '${startTime.hour.toString().padLeft(2, '0')} : ${startTime.minute.toString().padLeft(2, '0')}',
         end: '${now.hour.toString().padLeft(2, '0')} : ${now.minute.toString().padLeft(2, '0')}',
       );
-      Navigator.pop(context, record); // 將 record 傳回上一頁
-    } else {
-      Navigator.pop(context); // 沒有記錄時直接返回
+      Navigator.pop(context, record);
+    } else if (exitAfterReset) {
+      Navigator.pop(context);
     }
 
     setState(() {
@@ -55,8 +57,13 @@ class _TimerPageState extends State<TimerPage> {
       _isRunning = false;
     });
   }
+  //如果你之後仍希望在某些狀況下「退出頁面並帶出歷史紀錄」：
+  // 你可以把 _resetTimer() 改成接受參數來區分用途。
+  //如果只是要重設不退出： onPressed: () => _resetTimer(),
+  //如果未來某些狀況想要重設並退出： onPressed: () => _resetTimer(exitAfterReset: true),
 
 
+  /// 編輯倒數時間
   Future<void> _editTime() async {
     int? minutes = await showDialog<int>(
       context: context,
@@ -95,19 +102,20 @@ class _TimerPageState extends State<TimerPage> {
     }
   }
 
+  /// 時間格式化
   String _formatTime(int seconds) {
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$secs';
   }
 
+  /// 上方標題列
   Widget _buildTopBar({required bool isRunning, required VoidCallback onEdit}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 左右按鈕的 Row（佔滿寬度）
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -121,7 +129,6 @@ class _TimerPageState extends State<TimerPage> {
               ),
             ],
           ),
-          // 置中的標題
           Text(
             'Timer',
             style: TextStyle(
@@ -136,26 +143,19 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-
-  Widget _buildTimerCircle({
-    required double progress,
-    required String timeText,
-  })
-  {
+  /// 中央倒數環形進度條
+  Widget _buildTimerCircle({required double progress, required String timeText}) {
     return Center(
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Padding(
-            padding: EdgeInsets.only(top: 0),
-            child: SizedBox(
-              width: 280,
-              height: 280,
-              child: CustomPaint(
-                painter: GradientCircularProgressPainter(
-                  progress: progress,
-                  color: Color(0xFF383054), // 或你想要的任何純色
-                ),
+          SizedBox(
+            width: 280,
+            height: 280,
+            child: CustomPaint(
+              painter: GradientCircularProgressPainter(
+                progress: progress,
+                color: Color(0xFF383054),
               ),
             ),
           ),
@@ -172,6 +172,7 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
+  /// 控制按鈕區域
   Widget _buildControlButtons({
     required bool isRunning,
     required VoidCallback onStart,
@@ -179,44 +180,14 @@ class _TimerPageState extends State<TimerPage> {
     required VoidCallback onReset,
   }) {
     return SizedBox(
-      height: 120, // 固定整個控制區的高度，防止畫面跳動
+      height: 120,
       child: Center(
         child: isRunning
             ? Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1B143F),
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(18),
-                  ),
-                  onPressed: onPause,
-                  child: Icon(Icons.pause, size: 32),
-                ),
-                SizedBox(height: 8),
-                Text("Pause")
-              ],
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1B143F),
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(18),
-                  ),
-                  onPressed: onReset,
-                  child: Icon(Icons.stop, size: 32),
-                ),
-                SizedBox(height: 8),
-                Text("Quit")
-              ],
-            ),
+            _buildCircleButton(Icons.pause, "Pause", onPause),
+            _buildCircleButton(Icons.stop, "Quit", onReset),
           ],
         )
             : ElevatedButton(
@@ -240,15 +211,33 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
+  Widget _buildCircleButton(IconData icon, String label, VoidCallback onPressed) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF1B143F),
+            shape: CircleBorder(),
+            padding: EdgeInsets.all(18),
+          ),
+          onPressed: onPressed,
+          child: Icon(icon, size: 32),
+        ),
+        SizedBox(height: 8),
+        Text(label)
+      ],
+    );
+  }
+
+  /// 底部歷史紀錄入口
   Widget _buildHistoryBar() {
     return GestureDetector(
       onTap: () async {
-        final result = await Navigator.push<HistoryRecord>(
+        await Navigator.push<HistoryRecord>(
           context,
           MaterialPageRoute(builder: (_) => const HistoryPage()),
         );
-
-        // 你也可以選擇在這裡處理 result，如果有需要新增資料
       },
       child: Container(
         width: double.infinity,
@@ -272,8 +261,7 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-
-  /// 這是你可以調整所有部件的函數，可以傳入自訂參數
+  /// 主體組件
   Widget buildTimerComponent({
     required int initialTime,
     required int remainingTime,
@@ -320,9 +308,10 @@ class _TimerPageState extends State<TimerPage> {
   }
 }
 
+/// 繪製環形進度條的畫家
 class GradientCircularProgressPainter extends CustomPainter {
   final double progress;
-  final Color color; // 用 Color 而不是 Gradient
+  final Color color;
 
   GradientCircularProgressPainter({
     required this.progress,
@@ -335,14 +324,12 @@ class GradientCircularProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
-    // 背景圓圈
     final backgroundPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius, backgroundPaint);
 
-    // 前景圓圈（單色）
     final foregroundPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -357,4 +344,3 @@ class GradientCircularProgressPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
-

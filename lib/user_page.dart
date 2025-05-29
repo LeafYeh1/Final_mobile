@@ -1,10 +1,24 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'edit_profile.dart';
 import 'faq.dart';
 import 'about_us.dart';
+import 'main.dart';
 
-class UserPage extends StatelessWidget {
+class UserPage extends StatefulWidget {
   const UserPage({super.key});
+
+  @override
+  _UserPageState createState() => _UserPageState();
+}
+
+class _UserPageState extends State<UserPage> {
+  String name = "小明";
+  String email = "himing2001@gmail.com";
+  String age = "30";
+  String height = "160";
+  String weight = "65";
+  File? profileImage;
 
   @override
   Widget build(BuildContext context) {
@@ -18,36 +32,52 @@ class UserPage extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 20),
-          // 大頭照與基本資料
           Column(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 50,
-                backgroundImage: AssetImage('assets/avatar.jpg'), // 自訂使用者圖片
+                backgroundImage: profileImage != null
+                    ? FileImage(profileImage!)
+                    : const AssetImage('assets/avatar.jpg') as ImageProvider,
               ),
               const SizedBox(height: 10),
-              const Text("小明", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const Text("himing2001@gmail.com", style: TextStyle(color: Colors.grey)),
+              Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(email, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  _UserInfo(label: "Age", value: "30"),
-                  SizedBox(width: 20),
-                  _UserInfo(label: "Height", value: "160"),
-                  SizedBox(width: 20),
-                  _UserInfo(label: "Weight", value: "65"),
+                children: [
+                  _UserInfo(label: "Age", value: age),
+                  const SizedBox(width: 20),
+                  _UserInfo(label: "Height", value: height),
+                  const SizedBox(width: 20),
+                  _UserInfo(label: "Weight", value: weight),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 30),
-          // 功能選單
           Expanded(
             child: ListView(
               children: [
                 _ProfileTile(title: "Edit Profile", icon: Icons.edit, onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfilePage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditProfilePage(
+                        onChanged: (updatedData) {
+                          setState(() {
+                            name = updatedData['name'] ?? name;
+                            email = updatedData['email'] ?? email;
+                            height = updatedData['height'] ?? height;
+                            weight = updatedData['weight'] ?? weight;
+                            final imagePath = updatedData['profileImagePath'];
+                            if (imagePath != null) profileImage = File(imagePath);
+                          });
+                        },
+                      ),
+                    ),
+                  );
                 }),
                 _ProfileTile(title: "FAQ", icon: Icons.help_outline, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => FAQPage()));
@@ -56,8 +86,9 @@ class UserPage extends StatelessWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AboutUsPage()));
                 }),
                 _ProfileTile(title: "Log out", icon: Icons.logout, onTap: () {
-                  // TODO: 登出處理（可加跳轉回登入頁）
-                  Navigator.popUntil(context, (route) => route.isFirst); // 暫時回首頁
+                  Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => LoginPage()),
+                        (route) => false,
+                  );
                 }),
               ],
             ),
@@ -103,4 +134,3 @@ class _ProfileTile extends StatelessWidget {
     );
   }
 }
-

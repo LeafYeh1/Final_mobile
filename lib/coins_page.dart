@@ -23,8 +23,6 @@ class CoinsPage extends StatelessWidget {
                       Navigator.pop(context);
                     },
                   ),
-                  const Text("點數累積", style: TextStyle(fontSize: 14)),
-                  const Icon(Icons.code),
                 ],
               ),
               const SizedBox(height: 8),

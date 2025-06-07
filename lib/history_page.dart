@@ -1,143 +1,109 @@
-import 'package:flutter/material.dart';
-import 'timer_page.dart';
+  import 'package:flutter/material.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
 
-class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key});
+  import 'package:flutter/material.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
 
-  @override
-  State<HistoryPage> createState() => _HistoryPageState();
-}
+  // 定義資料模型
+  class HistoryRecord {
+    final String date;
+    final String duration;
+    final String start;
+    final String end;
 
-class _HistoryPageState extends State<HistoryPage> {
-  List<HistoryRecord> history = [
-    HistoryRecord(date: '2025 / 5 / 10', duration: '1 hr', start: '10 : 30', end: '11 : 30'),
-    // ... 其他紀錄
-  ];
-
-  void _removeRecord(int index) {
-    setState(() {
-      history.removeAt(index);
+    HistoryRecord({
+      required this.date,
+      required this.duration,
+      required this.start,
+      required this.end,
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFC8D0AD),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFC8D0AD),
-        leading: const BackButton(color: Colors.black),
-        title: const Text('History'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () async {
-              final newRecord = await Navigator.push<HistoryRecord>(
-                context,
-                MaterialPageRoute(builder: (_) => const TimerPage()),
-              );
-              if (newRecord != null) {
-                setState(() {
-                  history.insert(0, newRecord);
-                });
-              }
-            },
-          )
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: history.length,
-        itemBuilder: (context, index) {
-          final record = history[index];
-          return ListTile(
-            title: Text('${record.date} - ${record.duration}'),
-            subtitle: Text('Start: ${record.start}  End: ${record.end}'),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => _removeRecord(index),
-            ),
-          );
-        },
-      ),
-    );
+  // 建立 HistoryPage
+  class HistoryPage extends StatefulWidget {
+    final List<HistoryRecord> historyRecords;
+
+    const HistoryPage({Key? key, this.historyRecords = const []}) : super(key: key);
+
+    @override
+    State<HistoryPage> createState() => _HistoryPageState();
   }
-}
 
+  class _HistoryPageState extends State<HistoryPage> {
+    List<HistoryRecord> _firebaseHistory = [];
 
-class HistoryRecord {
-  final String date;
-  final String duration;
-  final String start;
-  final String end;
+    @override
+    void initState() {
+      super.initState();
+      _loadFirebaseHistory();
+    }
 
-  const HistoryRecord({
-    required this.date,
-    required this.duration,
-    required this.start,
-    required this.end,
-  });
-}
+    // 從 Firestore 讀取使用者歷史紀錄
+    Future<void> _loadFirebaseHistory() async {
+      try {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('timehistory')
+            .orderBy('timestamp', descending: true)
+            .get();
 
-class HistoryCard extends StatelessWidget {
-  final HistoryRecord record;
-  final VoidCallback onDelete;
+        setState(() {
+          _firebaseHistory = snapshot.docs.map((doc) {
+            final data = doc.data();
+            return HistoryRecord(
+              date: data['date'] ?? '',
+              duration: data['duration'] ?? '',
+              start: data['start'] ?? '',
+              end: data['end'] ?? '',
+            );
+          }).toList();
+        });
+      } catch (e) {
+        print('🔥 Firebase 讀取失敗：$e');
+      }
+    }
 
-  const HistoryCard({super.key, required this.record, required this.onDelete});
+    @override
+    Widget build(BuildContext context) {
+      final allHistory = _firebaseHistory;
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: const Color(0xFFACE588),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFFD7A06),
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('History'),
+          backgroundColor: Colors.white,
+        ),
+        backgroundColor: Color(0xCED3D9AF),
+        body: ListView.builder(
+          itemCount: allHistory.length,
+          itemBuilder: (context, index) {
+            final record = allHistory[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                record.duration,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.bold,
+              elevation: 4,
+              color: Color(0xADABE589),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('🗓️  日期：${record.date}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text('⏱️  持續時間：${record.duration}', style: TextStyle(fontSize: 16)),
+                    Text('🕑  開始：${record.start}', style: TextStyle(fontSize: 16)),
+                    Text('🕓  結束：${record.end}', style: TextStyle(fontSize: 16)),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    record.date,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('START : ${record.start}'),
-                  Text('END :   ${record.end}'),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: onDelete,
-            ),
-          ],
+            );
+          },
         ),
-      ),
-    );
+      );
+    }
   }
-}

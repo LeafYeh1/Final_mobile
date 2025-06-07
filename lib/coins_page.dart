@@ -1,7 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class CoinsPage extends StatelessWidget {
+class CoinsPage extends StatefulWidget {
   const CoinsPage({super.key});
+
+  @override
+  State<CoinsPage> createState() => _CoinsPageState();
+}
+
+class _CoinsPageState extends State<CoinsPage> {
+  int userPoints = 0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserPoints();
+  }
+
+  Future<void> fetchUserPoints() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print("⚠️ No user logged in.");
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final data = doc.data();
+
+      print("✅ Fetched user data: $data");
+
+      setState(() {
+        userPoints = data?['coins'] ?? 0;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("❌ Error fetching user points: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +113,11 @@ class CoinsPage extends StatelessWidget {
                               ),
                             ),
                             Center(
-                              child: Text(
-                                "350 Pt",
-                                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                              child: isLoading
+                                  ? CircularProgressIndicator(color: Colors.white)
+                                  : Text(
+                                userPoints == 0 ? "No points yet" : "$userPoints Pt",
+                                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             )
                           ],

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
-import 'history_page.dart';
+import 'history_page.dart';  // 確認你的 HistoryPage 支援接收 List<HistoryRecord>
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TimerPage extends StatefulWidget {
   const TimerPage({super.key});
@@ -10,12 +12,14 @@ class TimerPage extends StatefulWidget {
 }
 
 class _TimerPageState extends State<TimerPage> {
-  int _initialTime = 1 * 60; // 初始倒數時間（秒）
+  int _initialTime = 1 * 60;
   int _remainingTime = 1 * 60;
   Timer? _timer;
   bool _isRunning = false;
 
-  /// 開始計時器
+  // 這裡改成用 List 累積歷史
+  List<HistoryRecord> _historyRecords = [];
+
   void _startTimer() {
     setState(() => _isRunning = true);
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -28,55 +32,73 @@ class _TimerPageState extends State<TimerPage> {
     });
   }
 
-  /// 暫停計時器
   void _pauseTimer() {
     _timer?.cancel();
     setState(() => _isRunning = false);
   }
 
-  /// 重設計時器（不跳轉頁面）
-  void _resetTimer({bool exitAfterReset = false}) {
+  Future<void> _resetTimer({bool exitAfterReset = false}) async {
     _timer?.cancel();
 
     if (exitAfterReset && _remainingTime != _initialTime) {
       final now = DateTime.now();
-      final startTime = now.subtract(Duration(seconds: _initialTime - _remainingTime));
+      final elapsedSeconds = _initialTime - _remainingTime;
+      final startTime = now.subtract(Duration(seconds: elapsedSeconds));
       final record = HistoryRecord(
         date: '${now.year} / ${now.month} / ${now.day}',
-        duration: '${((_initialTime - _remainingTime) ~/ 60)} min',
+        duration: '${elapsedSeconds ~/ 60} min ${elapsedSeconds % 60} sec',
         start: '${startTime.hour.toString().padLeft(2, '0')} : ${startTime.minute.toString().padLeft(2, '0')}',
         end: '${now.hour.toString().padLeft(2, '0')} : ${now.minute.toString().padLeft(2, '0')}',
       );
-      Navigator.pop(context, record);
-    } else if (exitAfterReset) {
-      Navigator.pop(context);
+      _historyRecords.add(record);
+      // 寫入 Firebase Firestore
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      if (record.date != null && record.start != null && record.end != null && record.duration != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('timehistory')
+            .add({
+          'date': record.date,
+          'start': record.start,
+          'end': record.end,
+          'duration': record.duration,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      } else {
+        print('❗ 有欄位為 null，不寫入 Firebase');
+      }
+
     }
 
     setState(() {
-      _remainingTime = _initialTime;
       _isRunning = false;
+      _remainingTime = _initialTime;
     });
+
+    if (exitAfterReset) {
+      // 傳整個歷史清單到 HistoryPage
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HistoryPage(historyRecords: _historyRecords),
+        ),
+      );
+      // 回來後可視需要清空或保持歷史，這裡不清空讓歷史持續累積
+    }
   }
-  //如果你之後仍希望在某些狀況下「退出頁面並帶出歷史紀錄」：
-  // 你可以把 _resetTimer() 改成接受參數來區分用途。
-  //如果只是要重設不退出： onPressed: () => _resetTimer(),
-  //如果未來某些狀況想要重設並退出： onPressed: () => _resetTimer(exitAfterReset: true),
 
-
-  /// 編輯倒數時間
   Future<void> _editTime() async {
+    final controller = TextEditingController(text: (_initialTime ~/ 60).toString());
     int? minutes = await showDialog<int>(
       context: context,
       builder: (context) {
-        int tempMinutes = _initialTime ~/ 60;
         return AlertDialog(
           title: Text('設定倒數時間（分鐘）'),
           content: TextField(
+            controller: controller,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(hintText: "輸入分鐘數"),
-            onChanged: (value) {
-              tempMinutes = int.tryParse(value) ?? tempMinutes;
-            },
           ),
           actions: [
             TextButton(
@@ -85,7 +107,15 @@ class _TimerPageState extends State<TimerPage> {
             ),
             TextButton(
               child: Text("確定"),
-              onPressed: () => Navigator.pop(context, tempMinutes),
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                if (value != null && value > 0) {
+                  Navigator.pop(context, value);
+                } else {
+                  // 輸入錯誤可顯示提示或直接關閉
+                  Navigator.pop(context);
+                }
+              },
             ),
           ],
         );
@@ -102,14 +132,12 @@ class _TimerPageState extends State<TimerPage> {
     }
   }
 
-  /// 時間格式化
   String _formatTime(int seconds) {
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$secs';
   }
 
-  /// 上方標題列
   Widget _buildTopBar({required bool isRunning, required VoidCallback onEdit}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5),
@@ -143,7 +171,6 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-  /// 中央倒數環形進度條
   Widget _buildTimerCircle({required double progress, required String timeText}) {
     return Center(
       child: Stack(
@@ -172,7 +199,6 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-  /// 控制按鈕區域
   Widget _buildControlButtons({
     required bool isRunning,
     required VoidCallback onStart,
@@ -187,7 +213,7 @@ class _TimerPageState extends State<TimerPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildCircleButton(Icons.pause, "Pause", onPause),
-            _buildCircleButton(Icons.stop, "Quit", onReset),
+            _buildCircleButton(Icons.stop, "Quit", () => _resetTimer(exitAfterReset: true)),
           ],
         )
             : ElevatedButton(
@@ -230,13 +256,12 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-  /// 底部歷史紀錄入口
   Widget _buildHistoryBar() {
     return GestureDetector(
       onTap: () async {
-        await Navigator.push<HistoryRecord>(
+        await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const HistoryPage()),
+          MaterialPageRoute(builder: (_) => HistoryPage(historyRecords: _historyRecords)),
         );
       },
       child: Container(
@@ -261,7 +286,6 @@ class _TimerPageState extends State<TimerPage> {
     );
   }
 
-  /// 主體組件
   Widget buildTimerComponent({
     required int initialTime,
     required int remainingTime,
@@ -271,7 +295,7 @@ class _TimerPageState extends State<TimerPage> {
     required VoidCallback onReset,
     required VoidCallback onEdit,
   }) {
-    double progress = remainingTime / initialTime;
+    double progress = initialTime > 0 ? remainingTime / initialTime : 0;
 
     return Scaffold(
       backgroundColor: Color(0xCED3D9AF),
@@ -308,39 +332,39 @@ class _TimerPageState extends State<TimerPage> {
   }
 }
 
-/// 繪製環形進度條的畫家
 class GradientCircularProgressPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  GradientCircularProgressPainter({
-    required this.progress,
-    required this.color,
-  });
+  GradientCircularProgressPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = 18.0;
+    final strokeWidth = 20.0;
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
+    final radius = (size.width / 2) - strokeWidth;
 
-    final backgroundPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    canvas.drawCircle(center, radius, backgroundPaint);
-
-    final foregroundPaint = Paint()
+    final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = strokeWidth;
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.butt;  // 改成直角端點
 
-    final startAngle = -pi / 2;
-    final sweepAngle = 2 * pi * progress;
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweepAngle, false, foregroundPaint);
+    // 進度圈
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2,
+      2 * pi * progress,
+      false,
+      paint,
+    );
   }
 
+
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant GradientCircularProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
+  }
 }
+
+

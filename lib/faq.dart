@@ -11,6 +11,18 @@ class FAQPage extends StatelessWidget {
       'question': 'Is gardening still possible for seniors with limited strength or mobility?',
       'answer': 'Absolutely! Gardening can be adapted to any ability level. Seniors can start with light tasks like watering or pruning. Raised garden beds, container gardening, and ergonomic tools can help make gardening accessible for everyone.'
     },
+    {
+      'question': 'What are some safe plants for seniors to grow at home?',
+      'answer': 'Many herbs and vegetables are easy and safe to grow indoors or in small spaces. Basil, mint, cherry tomatoes, lettuce, and aloe vera are great options. These plants are low-maintenance, non-toxic, and provide a rewarding gardening experience for seniors.'
+    },
+    {
+      'question': 'How can gardening improve mental health for older adults?',
+      'answer': 'Gardening offers a sense of purpose and accomplishment, which can reduce feelings of loneliness and depression. Being in nature, caring for plants, and seeing progress over time can boost self-esteem and provide calmness — supporting emotional well-being.'
+    },
+    {
+      'question': 'How often should seniors garden to enjoy its benefits?',
+      'answer': 'Even just 15–30 minutes a few times a week can make a difference. Regular short gardening sessions help maintain mobility, lift mood, and provide structure to the day — without overexerting the body. Consistency is more important than duration.'
+    },
   ];
 
   @override

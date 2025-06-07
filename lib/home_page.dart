@@ -4,7 +4,8 @@ import 'user_page.dart';
 import 'camera_page.dart';
 import 'coins_page.dart';
 import 'timer_page.dart';
-
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

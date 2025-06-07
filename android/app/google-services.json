@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "830604535366",
+    "project_id": "userdata-3f09f",
+    "storage_bucket": "userdata-3f09f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:830604535366:android:cd60540055956aeefecc47",
+        "android_client_info": {
+          "package_name": "com.leafcaculator.hw03"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPnT8-OnW5jUbSWFJi9wNnvhx2gNEtN08"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

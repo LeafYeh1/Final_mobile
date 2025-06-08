@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'edit_profile.dart';
 import 'faq.dart';
 import 'about_us.dart';
@@ -13,12 +16,40 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  String name = "小明";
-  String email = "himing2001@gmail.com";
-  String age = "30";
-  String height = "160";
-  String weight = "65";
+  String name = "";
+  String email = "";
+  String age = "";
+  String height = "";
+  String weight = "";
   File? profileImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = userDoc.data();
+
+      if (data != null) {
+        setState(() {
+          name = data['name'] ?? '';
+          email = data['email'] ?? '';
+          age = data['age'] ?? '';
+          height = data['height'] ?? '';
+          weight = data['weight'] ?? '';
+          final imagePath = data['profileImagePath'];
+          if (imagePath != null && imagePath != '') {
+            profileImage = File(imagePath);
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,36 +91,53 @@ class _UserPageState extends State<UserPage> {
           Expanded(
             child: ListView(
               children: [
-                _ProfileTile(title: "Edit Profile", icon: Icons.edit, onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => EditProfilePage(
-                        onChanged: (updatedData) {
-                          setState(() {
-                            name = updatedData['name'] ?? name;
-                            email = updatedData['email'] ?? email;
-                            height = updatedData['height'] ?? height;
-                            weight = updatedData['weight'] ?? weight;
-                            final imagePath = updatedData['profileImagePath'];
-                            if (imagePath != null) profileImage = File(imagePath);
-                          });
-                        },
+                _ProfileTile(
+                  title: "Edit Profile",
+                  icon: Icons.edit,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditProfilePage(
+                          onChanged: (updatedData) {
+                            setState(() {
+                              name = updatedData['name'] ?? name;
+                              age = updatedData['age'] ?? age;
+                              email = updatedData['email'] ?? email;
+                              height = updatedData['height'] ?? height;
+                              weight = updatedData['weight'] ?? weight;
+                              final imagePath = updatedData['profileImagePath'];
+                              if (imagePath != null && imagePath != '') {
+                                profileImage = File(imagePath);
+                              }
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                  );
-                }),
-                _ProfileTile(title: "FAQ", icon: Icons.help_outline, onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => FAQPage()));
-                }),
-                _ProfileTile(title: "About us", icon: Icons.info_outline, onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => AboutUsPage()));
-                }),
-                _ProfileTile(title: "Log out", icon: Icons.logout, onTap: () {
-                  Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => LoginPage()),
-                        (route) => false,
-                  );
-                }),
+                    );
+                  },
+                ),
+                _ProfileTile(
+                    title: "FAQ",
+                    icon: Icons.help_outline,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => FAQPage()));
+                    }),
+                _ProfileTile(
+                    title: "About us",
+                    icon: Icons.info_outline,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AboutUsPage()));
+                    }),
+                _ProfileTile(
+                    title: "Log out",
+                    icon: Icons.logout,
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginPage()),
+                              (route) => false);
+                    }),
               ],
             ),
           ),

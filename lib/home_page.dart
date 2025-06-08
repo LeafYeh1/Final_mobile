@@ -4,8 +4,7 @@ import 'user_page.dart';
 import 'camera_page.dart';
 import 'coins_page.dart';
 import 'timer_page.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,9 +17,9 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   static final List<Widget> _pages = <Widget>[
-    HomeContent(),
-    MissionPage(),
-    UserPage(),
+    const HomeContent(),
+    const MissionPage(),
+    const UserPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -51,43 +50,84 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Image.asset('assets/logo.jpg', height: 120), // Logo 圖片
+    return Scaffold(
+      backgroundColor: const Color(0xFFCBD3AA), // 淡綠色背景
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(10, 30, 10, 12), // top 改成 60，讓整體往下
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset('assets/logo.jpg', height: 200, fit: BoxFit.cover),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: const [
+                Text(
+                  "Tools",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Color(0xFF496a36)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Tools 區塊
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildTool(context, Icons.camera_alt, "Camera"),
+                _buildTool(context, Icons.timer, "Timer"),
+                _buildTool(context, Icons.stars, "Coins"),
+              ],
+            ),
 
-          const SizedBox(height: 20),
-          // 工具區塊
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildTool(context, Icons.camera_alt, "Camera"),
-              _buildTool(context, Icons.timer, "Timer"),
-              _buildTool(context, Icons.stars, "Coins"),
-            ],
-          ),
+            const SizedBox(height: 20),
 
-          const SizedBox(height: 30),
-          // 健康知識區塊
-          Row(
-            children: const [
-              Text("Health knowledge", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildHealthCard("assets/health1.jpg", "Health Tips"),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildHealthCard("assets/health2.jpg", "Health Tips"),
-              ),
-            ],
-          ),
-        ],
+            // Health knowledge 區塊
+            Row(
+              children: const [
+                Text(
+                  "Health Knowledge",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Color(0xFF496a36)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildHealthCard(
+                    context,
+                    "assets/health1.jpg",
+                    "臺北市衛生局: 高齡者有氧運動健康操",
+
+                    "https://www.youtube.com/watch?v=7pIeSsndwbA",
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildHealthCard(
+                    context,
+                    "assets/health2.jpg",
+                    "How the food you eat affects ...",
+                    "https://www.youtube.com/watch?v=xyQY8a-ng6g",
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildHealthCard(
+                    context,
+                    "assets/health3.jpg",
+                    "不要生氣~~吳美雲老師讚美操 6",
+                    "https://www.youtube.com/watch?v=7Xdfi3qkPEw",
+                  ),
+                ),
+              ],
+            ),
+
+
+
+          ],
+        ),
       ),
     );
   }
@@ -96,61 +136,116 @@ class HomeContent extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (label == "Camera") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CameraPage()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraPage()));
+        } else if (label == "Timer") {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const TimerPage()));
+        } else if (label == "Coins") {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CoinsPage()));
         }
-        if (label == "Timer") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const TimerPage()),
-          );
-        }
-        if (label == "Coins") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CoinsPage()),
-          );
-        }
-      },
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.lightGreen.shade100,
-            child: Icon(icon, size: 30, color: Colors.green[700]),
-          ),
-          const SizedBox(height: 8),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildHealthCard(String imagePath, String title) {
-    return InkWell(
-      onTap: () {
-        // 點擊進入詳細健康知識頁面（之後可以實作）
       },
       child: Container(
-        height: 100,
+        width: 90,
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(imagePath),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black26, BlendMode.darken),
-          ),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
         ),
-        alignment: Alignment.bottomLeft,
-        padding: const EdgeInsets.all(8),
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 40, color: Colors.black87),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildHealthCard(BuildContext context, String imagePathOrUrl, String title, String url) {
+    // 嘗試從 url 抓出 YouTube 影片ID，若沒有就用原本 imagePathOrUrl
+    String? thumbnailUrl;
+    if (url.contains("youtube.com/watch?v=")) {
+      final uri = Uri.parse(url);
+      final videoId = uri.queryParameters['v'];
+      if (videoId != null && videoId.isNotEmpty) {
+        thumbnailUrl = "https://img.youtube.com/vi/$videoId/hqdefault.jpg";
+      }
+    }
+
+    return InkWell(
+      onTap: () async {
+        final Uri uri = Uri.parse(url);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("無法開啟網頁")),
+          );
+        }
+      },
+      child: Container(
+        height: 230,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.zero,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: thumbnailUrl != null
+                  ? Image.network(
+                thumbnailUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // 如果載入失敗，用原本 local 圖片
+                  return Image.asset(
+                    imagePathOrUrl,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
+                },
+              )
+                  : Image.asset(
+                imagePathOrUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
 }
+

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProfilePage extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onChanged;
@@ -12,20 +14,18 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final _initialName = 'HJM';
-  final _initialEmail = 'hjm.2025@gmail.com';
-  final _initialHeight = '180';
-  final _initialWeight = '65';
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
+  late TextEditingController _ageController;
 
   final _nameFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _heightFocus = FocusNode();
   final _weightFocus = FocusNode();
+  final _ageFocus = FocusNode();
 
   bool _isEditing = false;
   File? _profileImage;
@@ -33,10 +33,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: _initialName);
-    _emailController = TextEditingController(text: _initialEmail);
-    _heightController = TextEditingController(text: _initialHeight);
-    _weightController = TextEditingController(text: _initialWeight);
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _heightController = TextEditingController();
+    _weightController = TextEditingController();
+    _ageController = TextEditingController();
+
+    _loadUserData();
+  }
+  Future<void> _loadUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final data = doc.data();
+    if (data != null) {
+      setState(() {
+        _nameController.text = data['name'] ?? '';
+        _emailController.text = data['email'] ?? '';
+        _heightController.text = data['height'] ?? '';
+        _weightController.text = data['weight'] ?? '';
+        _ageController.text = data['age'] ?? '';
+        final imagePath = data['profileImagePath'];
+        if (imagePath != null && imagePath.isNotEmpty) {
+          _profileImage = File(imagePath);
+        }
+      });
+    }
   }
 
   @override
@@ -45,10 +68,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _emailController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _ageController.dispose();
     _nameFocus.dispose();
     _emailFocus.dispose();
     _heightFocus.dispose();
     _weightFocus.dispose();
+    _ageFocus.dispose();
     super.dispose();
   }
 
@@ -66,6 +91,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _notifyChange() {
     final updatedData = {
       'name': _nameController.text,
+      'age': _ageController.text,
       'email': _emailController.text,
       'height': _heightController.text,
       'weight': _weightController.text,
@@ -74,25 +100,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
     widget.onChanged?.call(updatedData);
   }
 
-  void _saveChanges() {
-    FocusScope.of(context).unfocus(); // 正確收鍵盤
+  void _saveChanges() async {
+    FocusScope.of(context).unfocus();
     _notifyChange();
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+
+      await userDoc.set({
+        'name': _nameController.text,
+        'age' : _ageController.text,
+        'email': _emailController.text,
+        'height': _heightController.text,
+        'weight': _weightController.text,
+        'profileImagePath': _profileImage?.path ?? '',
+      }, SetOptions(merge: true)); // merge: true 表示保留原本資料
+    }
+
     setState(() {
       _isEditing = false;
     });
   }
 
+
   void _cancelChanges() {
+    _loadUserData(); // 重新抓取 Firestore 的資料
     setState(() {
-      _nameController.text = _initialName;
-      _emailController.text = _initialEmail;
-      _heightController.text = _initialHeight;
-      _weightController.text = _initialWeight;
-      _profileImage = null;
       _isEditing = false;
     });
-    _notifyChange();
   }
+
 
   void _startEditing() {
     setState(() {
@@ -178,6 +216,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     SizedBox(height: 20),
                     _buildEditableField('Name', _nameController, _nameFocus),
+                    _buildEditableField('Age', _ageController, _ageFocus),
                     _buildEditableField('E-mail', _emailController, _emailFocus),
                     _buildEditableField('Height', _heightController, _heightFocus, type: TextInputType.number),
                     _buildEditableField('Weight', _weightController, _weightFocus, type: TextInputType.number),

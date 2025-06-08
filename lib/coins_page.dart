@@ -138,10 +138,10 @@ class _CoinsPageState extends State<CoinsPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(12),
                     children: [
-                      _buildRewardItem("assets/giftcard.png", "7-11 gift \$50", 1000),
-                      _buildRewardItem("assets/iphone.jpg", "iPhone 16 Pro 1TB", 10000000),
-                      _buildRewardItem("assets/ipad.jpg", "iPad Air 7", 10000000),
-                      _buildRewardItem("assets/signed_photo.jpg", "瑞峰 葉 Signed photo", 5000000),
+                      _buildRewardItem("assets/giftcard.png", "7-11 gift \$50", 2500),
+                      _buildRewardItem("assets/iphone.jpg", "iPhone 16 Pro 1TB", 4000),
+                      _buildRewardItem("assets/ipad.jpg", "iPad Air 7", 8000),
+                      _buildRewardItem("assets/signed_photo.jpg", "瑞峰 葉 Signed photo", 50),
                     ],
                   ),
                 ),

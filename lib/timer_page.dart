@@ -94,19 +94,19 @@ class _TimerPageState extends State<TimerPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('設定倒數時間（分鐘）'),
+          title: Text('Set countdown time (min)'),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(hintText: "輸入分鐘數"),
+            decoration: InputDecoration(hintText: "Enter minutes"),
           ),
           actions: [
             TextButton(
-              child: Text("取消"),
+              child: Text("cancel"),
               onPressed: () => Navigator.pop(context),
             ),
             TextButton(
-              child: Text("確定"),
+              child: Text("save"),
               onPressed: () {
                 final value = int.tryParse(controller.text);
                 if (value != null && value > 0) {

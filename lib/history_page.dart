@@ -89,11 +89,11 @@
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('🗓️  日期：${record.date}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('🗓️  Date：${record.date}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     SizedBox(height: 8),
-                    Text('⏱️  持續時間：${record.duration}', style: TextStyle(fontSize: 16)),
-                    Text('🕑  開始：${record.start}', style: TextStyle(fontSize: 16)),
-                    Text('🕓  結束：${record.end}', style: TextStyle(fontSize: 16)),
+                    Text('⏱️  Duration：${record.duration}', style: TextStyle(fontSize: 16)),
+                    Text('🕑  Start：${record.start}', style: TextStyle(fontSize: 16)),
+                    Text('🕓  End：${record.end}', style: TextStyle(fontSize: 16)),
                   ],
                 ),
               ),

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -19,8 +21,32 @@ class _CameraPageState extends State<CameraPage> {
 
     if (image != null) {
       setState(() {
-        _images.insert(0, File(image.path)); // 將新照片加入清單最前面
+        _images.insert(0, File(image.path));
       });
+
+      // 拍完照 → 檢查並更新任務狀態
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+
+        final docSnap = await userDoc.get();
+        final data = docSnap.data() ?? {};
+        final missions = data['missions'] ?? {};
+        final currentCoins = data['coins'] ?? 0;
+
+        // 檢查任務是否已完成
+        if (missions['take_picture'] != true) {
+          // 更新任務完成狀態與增加 coins
+          await userDoc.set({
+            'missions': {'take_picture': true},
+            'coins': currentCoins + 1,
+          }, SetOptions(merge: true));
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('🎉 拍照任務完成！+1 金幣')),
+          );
+        }
+      }
     }
   }
 

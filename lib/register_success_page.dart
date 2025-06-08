@@ -1,4 +1,3 @@
-// 3. register_success_page.dart
 import 'package:flutter/material.dart';
 import 'main.dart';
 
@@ -11,7 +10,11 @@ class RegisterSuccessPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // 背景圖
           Image.asset('assets/background.jpg', fit: BoxFit.cover),
+          // 黑色透明遮罩
+          Container(color: Colors.black.withOpacity(0.3)),
+          // 成功訊息區塊
           Center(
             child: Container(
               width: 300,
@@ -25,34 +28,49 @@ class RegisterSuccessPage extends StatelessWidget {
                 children: [
                   const Text(
                     'Registration Successful!',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Hi, welcome to\n[Green Living with Plants]!',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
                   const Text(
                     "We're excited to have you here.",
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF003366),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003366),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                      child: const Text('Log In Now'),
                     ),
-                    child: const Text('Log In Now'),
                   ),
                 ],
               ),

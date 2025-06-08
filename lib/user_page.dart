@@ -72,16 +72,16 @@ class _UserPageState extends State<UserPage> {
                     : const AssetImage('assets/avatar.jpg') as ImageProvider,
               ),
               const SizedBox(height: 10),
-              Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(name, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
               Text(email, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _UserInfo(label: "Age", value: age),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 40),
                   _UserInfo(label: "Height", value: height),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 40),
                   _UserInfo(label: "Weight", value: weight),
                 ],
               ),
@@ -157,9 +157,9 @@ class _UserInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 20)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
       ],
     );
   }

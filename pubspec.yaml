@@ -35,6 +35,7 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.2.5
+  lottie: ^3.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -63,7 +64,12 @@ flutter:
     - assets/audio/leng.mp3
     - assets/audio/ye.mp3
     - assets/audio/li.mp3
+    - assets/audio/exchange.mp3
     - assets/audio/water.mp3
+    - assets/audio/coins.mp3
+    - assets/lottie/giftbox.json
+    - assets/lottie/fireworks.json
+    - assets/lottie/success.json
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

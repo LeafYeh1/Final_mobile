@@ -4,6 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+final AudioPlayer _coinPlayer = AudioPlayer();
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -41,7 +44,12 @@ class _CameraPageState extends State<CameraPage> {
             'missions': {'take_picture': true},
             'coins': currentCoins + 20,
           }, SetOptions(merge: true));
-
+          // 播放 coin 音效
+          try {
+            await _coinPlayer.play(AssetSource('audio/coins.mp3'));
+          } catch (e) {
+            print('❌ Failed to play coin sound: $e');
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('🎉 20 coins earned for taking picture!')),
           );

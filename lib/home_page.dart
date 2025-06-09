@@ -7,6 +7,9 @@ import 'timer_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+final AudioPlayer _coinPlayer = AudioPlayer();
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -205,6 +208,12 @@ class HomeContent extends StatelessWidget {
                 'coins': currentCoins + 20,
               }, SetOptions(merge: true));
               // ✅ 顯示提示訊息
+              // 播放 coin 音效
+              try {
+                await _coinPlayer.play(AssetSource('audio/coins.mp3'));
+              } catch (e) {
+                print('❌ Failed to play coin sound: $e');
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('🎉 +20 coin for watching health tips!')),
               );

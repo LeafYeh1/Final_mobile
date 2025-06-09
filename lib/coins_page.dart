@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:lottie/lottie.dart';
 
+
+final player = AudioPlayer();
+String? currentlyAnimating; // 控制正在兌換的項目（避免多重點擊）
 class CoinsPage extends StatefulWidget {
   const CoinsPage({super.key});
 
@@ -154,11 +159,27 @@ class _CoinsPageState extends State<CoinsPage> {
   }
 
   Widget _buildRewardItem(String imagePath, String title, int cost) {
+    final isAnimating = currentlyAnimating == title;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Image.asset(imagePath, width: 60, height: 60, fit: BoxFit.cover),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOutBack,
+            transform: isAnimating
+                ? (Matrix4.identity()
+              ..scale(1.5)
+              ..rotateZ(0.2))
+                : Matrix4.identity(),
+            child: ColorFiltered(
+              colorFilter: isAnimating
+                  ? const ColorFilter.mode(Colors.yellowAccent, BlendMode.modulate)
+                  : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+              child: Image.asset(imagePath, width: 60, height: 60, fit: BoxFit.cover),
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
           Column(
@@ -171,13 +192,87 @@ class _CoinsPageState extends State<CoinsPage> {
               ),
               const SizedBox(height: 4),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  if (userPoints < cost) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Not enough coins!")),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    currentlyAnimating = title;
+                    userPoints -= cost;
+                  });
+
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({'coins': userPoints});
+                  }
+
+                  await showGiftDialog(title);
+
+                  setState(() {
+                    currentlyAnimating = null;
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("🎉 Successfully exchanged $title!")),
+                  );
+                },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                 child: const Text("Exchange", style: TextStyle(color: Colors.white)),
               )
             ],
           )
         ],
+      ),
+    );
+  }
+  Future<void> showGiftDialog(String title) async {
+    await player.play(AssetSource('audio/exchange.mp3'));
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 閃亮特效背景
+            Positioned.fill(
+              child: Lottie.asset('assets/lottie/success.json',
+                repeat: true,
+                fit: BoxFit.cover,
+              ),
+            ),
+            // 禮物盒
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.asset('assets/lottie/giftbox.json',
+                    repeat: false,
+                    width: 200,
+                    height: 200),
+                Text("你收到了 🎁", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                Text(title, style: TextStyle(fontSize: 22, color: Colors.yellowAccent, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    await player.stop(); // 停止音樂
+                    Navigator.pop(context); // 關閉 dialog
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  child: const Text("OK", style: TextStyle(color: Colors.white)),
+                )
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

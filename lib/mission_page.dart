@@ -75,12 +75,16 @@ Widget _buildFlowerArea() {
                     'missions.water_flower': true,
                     'coins': FieldValue.increment(10),
                   });
-
                   // 👉 更新畫面
                   if (context.mounted) {
                     final state = context.findAncestorStateOfType<_MissionPageState>();
                     state?._loadMissionStatus(); // <- 呼叫重新讀取狀態
-
+                    // 🔊 播放 coin 聲音
+                    try {
+                      await player.play(AssetSource('audio/coins.mp3'));
+                    } catch (e) {
+                      print("❌ Coin audio play failed: $e");
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('🎉 10 coins earned for water_flower!'),

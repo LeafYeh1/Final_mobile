@@ -1,6 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+bool isWatering = false;
+bool flowerWatered = false;
+bool localWatering = false;
+bool localFlowerWatered = false;
+
+final player = AudioPlayer();
+
+Widget _buildFlowerArea() {
+  return StatefulBuilder(
+    builder: (context, setLocalState) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white70,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedOpacity(
+              opacity: isWatering ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 800),
+              child: const Icon(Icons.water_drop, size: 55, color: Colors.blueAccent),
+            ),
+            const SizedBox(height: 8),
+            Icon(
+              Icons.local_florist,
+              size: 55,
+              color: flowerWatered ? Colors.green : Colors.pinkAccent,
+            ),
+            const SizedBox(height: 5),
+            ElevatedButton.icon(
+              onPressed: isWatering
+                  ? null
+                  : () async {
+                setLocalState(() => isWatering = true);
+
+                // 撥放澆水音效
+                try {
+                  await player.play(AssetSource('audio/water.mp3'));
+                } catch (e) {
+                  print("❌ Audio play failed: $e");
+                }
+
+                // 等待澆水動畫完成
+                await Future.delayed(const Duration(seconds: 2));
+                setLocalState(() {
+                  isWatering = false;
+                  flowerWatered = true;
+                });
+
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid == null) return;
+
+                final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+                final snapshot = await userDoc.get();
+                final data = snapshot.data();
+
+                final hasDone = data?['missions']?['water_flower'] == true;
+                if (!hasDone) {
+                  // 更新 missions.water_flower = true 並加上 coins
+                  await userDoc.update({
+                    'missions.water_flower': true,
+                    'coins': FieldValue.increment(10),
+                  });
+
+                  // 👉 更新畫面
+                  if (context.mounted) {
+                    final state = context.findAncestorStateOfType<_MissionPageState>();
+                    state?._loadMissionStatus(); // <- 呼叫重新讀取狀態
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('🎉 10 coins earned for water_flower!'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.water),
+              label: const Text(
+                'Water',
+                style: TextStyle(
+                  fontSize: 20, // 這裡改變大小，例如 20 是較大的字
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlueAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
 class MissionPage extends StatefulWidget {
   const MissionPage({super.key});
@@ -64,21 +175,29 @@ class _MissionPageState extends State<MissionPage> {
         foregroundColor: Colors.white,
         elevation: 2,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ListView(
-                children: missions.entries.map((e) => _buildMissionTile(e.key, e.value)).toList(),
-              ),
+      body: Stack(
+        children: [
+          // 任務清單
+          Padding(
+            padding: const EdgeInsets.only(bottom: 120.0), // 預留底部空間
+            child: ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: missions.entries.map((e) => _buildMissionTile(e.key, e.value)).toList(),
             ),
-          ],
-        ),
+          ),
+
+          // 澆水區域
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildFlowerArea(),
+          ),
+        ],
       ),
     );
   }
+
 
   Widget _buildMissionTile(String title, int coin) {
     final isDone = completedMissions[title] ?? false;

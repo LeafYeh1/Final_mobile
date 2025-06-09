@@ -43,7 +43,7 @@ class _CameraPageState extends State<CameraPage> {
           }, SetOptions(merge: true));
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('🎉 20 coin earned for taking picture!')),
+            const SnackBar(content: Text('🎉 20 coins earned for taking picture!')),
           );
         }
       }

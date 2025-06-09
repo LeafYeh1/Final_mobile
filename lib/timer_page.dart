@@ -4,6 +4,9 @@ import 'dart:math';
 import 'history_page.dart';  // 確認你的 HistoryPage 支援接收 List<HistoryRecord>
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+final player = AudioPlayer();
 
 class TimerPage extends StatefulWidget {
   const TimerPage({super.key});
@@ -34,30 +37,34 @@ class _TimerPageState extends State<TimerPage> {
       final missions = data['missions'] ?? {};
       final currentCoins = (data['coins'] ?? 0) as int;
 
-      // ✅ 判斷 timing 是否為 false
       if (missions['timing'] == false) {
-          // 更新任務完成狀態與增加 coins
-          await userDoc.set({
-            'missions': {'timing': true},
-            'coins': currentCoins + 30,
-          }, SetOptions(merge: true));
+        await userDoc.set({
+          'missions': {'timing': true},
+          'coins': currentCoins + 30,
+        }, SetOptions(merge: true));
+        try {
+          await player.play(AssetSource('audio/coins.mp3'));
+        } catch (e) {
+          print("❌ Coin audio play failed: $e");
+        }
 
-        // ✅ 顯示提示訊息（可選）
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('🎉 30 coin earned for starting timer!')),
         );
       }
     });
 
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
       if (_remainingTime > 0) {
         setState(() => _remainingTime--);
       } else {
         timer.cancel();
         setState(() => _isRunning = false);
+        await _resetTimer(exitAfterReset: true);  // ✅ 自動儲存並重設
       }
     });
   }
+
 
   void _pauseTimer() {
     _timer?.cancel();

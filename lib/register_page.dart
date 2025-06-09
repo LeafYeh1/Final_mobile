@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_success_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -91,34 +93,55 @@ class RegisterPage extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        final email = emailController.text.trim();
-                        final password = passwordController.text.trim();
-                        final confirm = confirmController.text.trim();
+                        onPressed: () async {
+                          final email = emailController.text.trim();
+                          final password = passwordController.text.trim();
+                          final confirm = confirmController.text.trim();
+                          final name = usernameController.text.trim();
 
-                        if (password != confirm) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Passwords do not match")),
-                          );
-                          return;
-                        }
+                          if (password != confirm) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Passwords do not match")),
+                            );
+                            return;
+                          }
 
-                        try {
-                          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                            email: email,
-                            password: password,
-                          );
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const RegisterSuccessPage()),
-                          );
-                        } on FirebaseAuthException catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Error: ${e.message}")),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
+                          try {
+                            final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                              email: email,
+                              password: password,
+                            );
+
+                            final uid = credential.user?.uid;
+                            if (uid != null) {
+                              await FirebaseFirestore.instance.collection('users').doc(uid).set({
+                                'name': name,
+                                'email': email,
+                                'coins': 0,
+                                'age': null,
+                                'height': null,
+                                'weight': null,
+                                'profileImagePath': null,
+                                'missions': {
+                                  'click_health_tips': false,
+                                  'take_picture': false,
+                                  'timing': false,
+                                  'water_flower': false,
+                                }
+                              });
+                            }
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const RegisterSuccessPage()),
+                            );
+                          } on FirebaseAuthException catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: ${e.message}")),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF003366),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),

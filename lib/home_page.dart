@@ -5,6 +5,8 @@ import 'camera_page.dart';
 import 'coins_page.dart';
 import 'timer_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -182,12 +184,39 @@ class HomeContent extends StatelessWidget {
 
     return InkWell(
       onTap: () async {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
         final Uri uri = Uri.parse(url);
+
         try {
+          await FirebaseFirestore.instance.runTransaction((transaction) async {
+            final snapshot = await transaction.get(userDoc);
+            final data = snapshot.data();
+            if (data == null) return;
+
+            final missions = data['missions'] ?? {};
+            final currentCoins = (data['coins'] ?? 0) as int;
+
+            // ✅ 檢查是否已完成任務
+            if (missions['click_health_tips'] != true) {
+              // 更新任務完成狀態與增加 coins
+              await userDoc.set({
+                'missions': {'click_health_tips': true},
+                'coins': currentCoins + 20,
+              }, SetOptions(merge: true));
+              // ✅ 顯示提示訊息
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('🎉 +20 coin for watching health tips!')),
+              );
+            }
+          });
+
+          // ✅ 開啟影片
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("無法開啟網頁")),
+            const SnackBar(content: Text("無法開啟網頁或任務處理失敗")),
           );
         }
       },

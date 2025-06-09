@@ -20,8 +20,35 @@ class _TimerPageState extends State<TimerPage> {
   // 這裡改成用 List 累積歷史
   List<HistoryRecord> _historyRecords = [];
 
-  void _startTimer() {
+  void _startTimer() async {
     setState(() => _isRunning = true);
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userDoc);
+      final data = snapshot.data();
+      if (data == null) return;
+
+      final missions = data['missions'] ?? {};
+      final currentCoins = (data['coins'] ?? 0) as int;
+
+      // ✅ 判斷 timing 是否為 false
+      if (missions['timing'] == false) {
+          // 更新任務完成狀態與增加 coins
+          await userDoc.set({
+            'missions': {'timing': true},
+            'coins': currentCoins + 30,
+          }, SetOptions(merge: true));
+
+        // ✅ 顯示提示訊息（可選）
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('🎉 30 coin earned for starting timer!')),
+        );
+      }
+    });
+
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (_remainingTime > 0) {
         setState(() => _remainingTime--);
@@ -35,6 +62,18 @@ class _TimerPageState extends State<TimerPage> {
   void _pauseTimer() {
     _timer?.cancel();
     setState(() => _isRunning = false);
+  }
+  Future<void> _addCoin() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userDoc);
+      final currentCoins = snapshot.data()?['coins'] ?? 0;
+      transaction.update(userDoc, {'coins': currentCoins + 1});
+    });
   }
 
   Future<void> _resetTimer({bool exitAfterReset = false}) async {

@@ -94,7 +94,7 @@ class _CoinsPageState extends State<CoinsPage> {
                       width: 200,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: Color(0xFF78735B),
+                          color: Color(0xFFB7D849),
                           borderRadius: BorderRadius.all(Radius.circular(25)),
                         ),
                         child: Stack(

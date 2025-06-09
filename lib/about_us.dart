@@ -19,6 +19,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
       'comment': '第一次看NBA，請問LBJ是露比醬的意思嗎？',
       'image': 'assets/pan.jpg',
       'audio': 'assets/audio/pan.mp3',
+      'color': '0xFF89E6C7',
     },
     {
       'id': '1112918',
@@ -26,6 +27,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
       'comment': '你若生活痛苦，記得保持微笑',
       'image': 'assets/leng.jpg',
       'audio': 'assets/audio/leng.mp3',
+      'color': '0xFFFDC517',
     },
     {
       'id': '1112961',
@@ -33,6 +35,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
       'comment': 'Never Gonna Give You Up',
       'image': 'assets/ye.jpg',
       'audio': 'assets/audio/ye.mp3',
+      'color': '0xFF9AC8F0',
     },
     {
       'id': '1112963',
@@ -40,16 +43,15 @@ class _AboutUsPageState extends State<AboutUsPage> {
       'comment': '生活枯燥乏味 早八謀殺人類',
       'image': 'assets/li.jpg',
       'audio': 'assets/audio/li.mp3',
+      'color': '0xFFF1C4CB',
     },
   ];
 
   final List<Color> greenShades = [
-    const Color(0xFFB2E8C3),
-    const Color(0xFFA4D8A5),
-    const Color(0xFFB4E197),
-    const Color(0xFFA7D7A8),
-    const Color(0xFF8CD790),
-    const Color(0xFF75C67A),
+    const Color(0xFFACF0DA),
+    const Color(0xFFFDC571),
+    const Color(0xFF9AC8F0),
+    const Color(0xFFF1C4CB),
   ];
 
   Future<void> _playAudio(String path) async {

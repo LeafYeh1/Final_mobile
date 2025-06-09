@@ -39,11 +39,11 @@ class _CameraPageState extends State<CameraPage> {
           // 更新任務完成狀態與增加 coins
           await userDoc.set({
             'missions': {'take_picture': true},
-            'coins': currentCoins + 1,
+            'coins': currentCoins + 20,
           }, SetOptions(merge: true));
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('🎉 拍照任務完成！+1 金幣')),
+            const SnackBar(content: Text('🎉 20 coin earned for taking picture!')),
           );
         }
       }
